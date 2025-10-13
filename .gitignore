@@ -1,0 +1,3 @@
+data/processed/*.csv
+data/raw/*.csv
+models/*.pkl
