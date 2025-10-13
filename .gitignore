@@ -1,3 +1,9 @@
-data/processed/*.csv
+# Ignore all CSVs by default
 data/raw/*.csv
+data/processed/*.csv
+
+# BUT keep the smaller sample files
+!data/raw/*sample.csv
+!data/processed/*sample.csv
 models/*.pkl
+src/__pycache__/
