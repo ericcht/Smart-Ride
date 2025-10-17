@@ -159,7 +159,7 @@ class SmartRideBaselineModel:
         )
         
         self.model.fit(self.X_train_scaled, self.y_train)
-        print("✓ Model training completed")
+        print("  Model training completed")
     
     def evaluate_model(self):
         """
@@ -236,21 +236,21 @@ class SmartRideBaselineModel:
         # Interpretation
         print(f"\n3. INTERPRETATION:")
         if cv_std < 0.02:
-            print(f"   ✓ Low variance ({cv_std:.4f}) - Model is stable across folds")
+            print(f"     Low variance ({cv_std:.4f}) - Model is stable across folds")
         else:
             print(f"   ⚠ Moderate variance ({cv_std:.4f}) - Some instability")
         
         if train_test_gap < 0.05:
-            print(f"   ✓ Good generalization - Small train-test gap ({train_test_gap:.4f})")
+            print(f"     Good generalization - Small train-test gap ({train_test_gap:.4f})")
         elif train_test_gap < 0.10:
             print(f"   ⚠ Slight overfitting - Train-test gap: {train_test_gap:.4f}")
         else:
             print(f"   ⚠ Overfitting detected - Large gap: {train_test_gap:.4f}")
         
         if test_accuracy > 0.75:
-            print(f"   ✓ Good baseline performance ({test_accuracy:.4f})")
+            print(f"     Good baseline performance ({test_accuracy:.4f})")
         elif test_accuracy > 0.60:
-            print(f"   ✓ Acceptable baseline performance ({test_accuracy:.4f})")
+            print(f"     Acceptable baseline performance ({test_accuracy:.4f})")
         else:
             print(f"   ⚠ Low performance - Consider feature engineering")
         
@@ -396,7 +396,7 @@ class SmartRideBaselineModel:
         
         if save_path:
             plt.savefig(save_path, dpi=300, bbox_inches='tight')
-            print(f"\n✓ Visualization saved to: {save_path}")
+            print(f"\n  Visualization saved to: {save_path}")
         
         plt.show()
     
@@ -451,10 +451,10 @@ def main():
     print("\n" + "="*70)
     print(" FINAL SUMMARY")
     print("="*70)
-    print(f"\n✓ Model Type: Logistic Regression (Baseline)")
-    print(f"✓ Test Accuracy: {metrics['test_accuracy']:.4f}")
-    print(f"✓ Test F1-Score: {metrics['test_f1']:.4f}")
-    print(f"✓ Cross-Validation Stability: {metrics['cv_std']:.4f} std")
+    print(f"\n  Model Type: Logistic Regression (Baseline)")
+    print(f"  Test Accuracy: {metrics['test_accuracy']:.4f}")
+    print(f"  Test F1-Score: {metrics['test_f1']:.4f}")
+    print(f"  Cross-Validation Stability: {metrics['cv_std']:.4f} std")
     print(f"\nThis baseline establishes a performance floor for future models.")
     print("Future improvements: Feature selection, ensemble methods, deep learning.\n")
 

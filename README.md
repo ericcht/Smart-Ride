@@ -24,7 +24,7 @@ Uber drivers often waste time and lose money by accepting unprofitable or ineffi
 4. **Evaluation**: Comprehensive performance metrics including bias-variance analysis
 5. **Future Work**: Ensemble methods, deep learning, and real-time optimization
 
-## Baseline Model Results ✓
+## Baseline Model Results  
 - **Model Type**: Logistic Regression
 - **Test Accuracy**: 96.50%
 - **F1-Score**: 96.55%
