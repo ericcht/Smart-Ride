@@ -2,55 +2,36 @@
 Smart Ride Baseline Model
 Author: Team 5 (Jeffery Chen, Alex Chen, Eric Chtilianov, Ethan Dietrich)
 
-BASELINE MODEL IMPLEMENTATION & DOCUMENTATION
-==============================================
 
-TECHNICAL EXPLANATION:
----------------------
 This baseline model uses Logistic Regression for binary classification to predict
 whether a driver should accept (1) or reject (0) a ride request.
 
-How Logistic Regression Works:
-1. Linear Combination: Creates weighted sum of input features
-   z = w₀ + w₁x₁ + w₂x₂ + ... + wₙxₙ
-   
-2. Sigmoid Activation: Transforms linear output to probability [0,1]
-   P(accept=1|X) = 1 / (1 + e^(-z))
-   
-3. Decision Boundary: Classifies based on probability threshold (typically 0.5)
-   - If P(accept) ≥ 0.5 → Accept ride
-   - If P(accept) < 0.5 → Reject ride
+Model Details:
+- Algorithm: Logistic Regression with L2 regularization
+- Input: 32 engineered features
+- Output: Binary prediction (accept/reject)
+- Performance: ~73-78% accuracy baseline
 
-4. Training: Minimizes log loss (cross-entropy) using gradient descent
-   Loss = -[y log(p) + (1-y) log(1-p)]
-
-Why Logistic Regression as Baseline:
-- Simple and interpretable (feature weights show importance)
-- Fast training and prediction
-- Probabilistic outputs (confidence scores)
-- No hyperparameter tuning required for baseline
-- Establishes performance floor for complex models
-
-Feature Engineering:
-- Numeric features: fare_amount, trip_distance, wait_time, trip_duration, ratings
-- Temporal features: pickup_hour, day_of_week, is_weekend, is_rush_hour
-- Derived features: fare_per_km, fare_per_minute, speed_kmh
-- Categorical features: One-hot encoded payment_type and vehicle_type
+Features Used:
+- Numeric: fare_amount, trip_distance, wait_time, trip_duration, ratings
+- Temporal: pickup_hour, day_of_week, is_weekend, is_rush_hour
+- Derived: fare_per_km, fare_per_minute, speed_kmh
+- Categorical: One-hot encoded payment_type and vehicle_type
 
 Target Variable:
 - should_accept: Binary (1 = accept, 0 = reject)
 - Based on profitability_score relative to median
-- NOTE: profitability_score is EXCLUDED from training features to prevent target leakage
+- NOTE: profitability_score is EXCLUDED from training to prevent target leakage
 """
 
 import pandas as pd
 import numpy as np
-from sklearn.model_selection import train_test_split, cross_val_score
+from sklearn.model_selection import train_test_split
 from sklearn.linear_model import LogisticRegression
 from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import (
     accuracy_score, precision_score, recall_score, f1_score,
-    confusion_matrix, classification_report, roc_auc_score, roc_curve
+    classification_report, roc_auc_score
 )
 import matplotlib.pyplot as plt
 import seaborn as sns
@@ -151,11 +132,12 @@ class SmartRideBaselineModel:
         self.X_train_scaled = self.scaler.fit_transform(self.X_train)
         self.X_test_scaled = self.scaler.transform(self.X_test)
         
-        # Train logistic regression with L2 regularization (default)
+        # Train logistic regression with regularization
         self.model = LogisticRegression(
             random_state=self.random_state,
-            max_iter=1000,
-            solver='lbfgs'
+            max_iter=500,
+            solver='lbfgs',
+            C=0.5  # Stronger regularization for simpler baseline
         )
         
         self.model.fit(self.X_train_scaled, self.y_train)
@@ -163,10 +145,10 @@ class SmartRideBaselineModel:
     
     def evaluate_model(self):
         """
-        Comprehensive model evaluation with bias/variance analysis.
+        Basic model evaluation.
         
         Returns:
-            Dictionary containing all evaluation metrics
+            Dictionary containing evaluation metrics
         """
         print("\n" + "="*60)
         print("MODEL PERFORMANCE EVALUATION")
@@ -185,78 +167,30 @@ class SmartRideBaselineModel:
         test_f1 = f1_score(self.y_test, y_test_pred)
         test_roc_auc = roc_auc_score(self.y_test, y_test_proba)
         
-        # Confusion matrix
-        cm = confusion_matrix(self.y_test, y_test_pred)
-        
         # Print results
-        print("\n1. ACCURACY METRICS:")
+        print("\nACCURACY METRICS:")
         print(f"   Train Accuracy: {train_accuracy:.4f}")
         print(f"   Test Accuracy:  {test_accuracy:.4f}")
         print(f"   Accuracy Gap:   {abs(train_accuracy - test_accuracy):.4f}")
         
-        print("\n2. CLASSIFICATION METRICS (Test Set):")
+        print("\nCLASSIFICATION METRICS (Test Set):")
         print(f"   Precision: {test_precision:.4f}")
         print(f"   Recall:    {test_recall:.4f}")
         print(f"   F1-Score:  {test_f1:.4f}")
         print(f"   ROC-AUC:   {test_roc_auc:.4f}")
         
-        print("\n3. CONFUSION MATRIX:")
-        print(f"   True Negatives:  {cm[0,0]}")
-        print(f"   False Positives: {cm[0,1]}")
-        print(f"   False Negatives: {cm[1,0]}")
-        print(f"   True Positives:  {cm[1,1]}")
-        
-        # Bias-Variance Analysis
-        print("\n" + "="*60)
-        print("BIAS-VARIANCE ANALYSIS")
-        print("="*60)
-        
-        # Cross-validation for variance estimation
-        cv_scores = cross_val_score(
-            self.model, self.X_train_scaled, self.y_train, 
-            cv=5, scoring='accuracy'
-        )
-        
-        cv_mean = cv_scores.mean()
-        cv_std = cv_scores.std()
-        
-        print(f"\n1. VARIANCE ANALYSIS (5-Fold Cross-Validation):")
-        print(f"   CV Mean Accuracy: {cv_mean:.4f}")
-        print(f"   CV Std Deviation: {cv_std:.4f}")
-        print(f"   CV Scores: {[f'{s:.4f}' for s in cv_scores]}")
-        
-        # Bias analysis
-        bias_indicator = 1 - test_accuracy
-        train_test_gap = train_accuracy - test_accuracy
-        
-        print(f"\n2. BIAS ANALYSIS:")
-        print(f"   Test Error Rate (Bias Indicator): {bias_indicator:.4f}")
-        print(f"   Train-Test Gap (Variance Indicator): {train_test_gap:.4f}")
-        
         # Interpretation
-        print(f"\n3. INTERPRETATION:")
-        if cv_std < 0.02:
-            print(f"     Low variance ({cv_std:.4f}) - Model is stable across folds")
-        else:
-            print(f"   ⚠ Moderate variance ({cv_std:.4f}) - Some instability")
-        
+        train_test_gap = train_accuracy - test_accuracy
         if train_test_gap < 0.05:
-            print(f"     Good generalization - Small train-test gap ({train_test_gap:.4f})")
+            print(f"\n  Good generalization - Small train-test gap ({train_test_gap:.4f})")
         elif train_test_gap < 0.10:
-            print(f"   ⚠ Slight overfitting - Train-test gap: {train_test_gap:.4f}")
+            print(f"\n  Slight overfitting - Train-test gap: {train_test_gap:.4f}")
         else:
-            print(f"   ⚠ Overfitting detected - Large gap: {train_test_gap:.4f}")
-        
-        if test_accuracy > 0.75:
-            print(f"     Good baseline performance ({test_accuracy:.4f})")
-        elif test_accuracy > 0.60:
-            print(f"     Acceptable baseline performance ({test_accuracy:.4f})")
-        else:
-            print(f"   ⚠ Low performance - Consider feature engineering")
+            print(f"\n  Overfitting detected - Large gap: {train_test_gap:.4f}")
         
         # Detailed classification report
         print("\n" + "="*60)
-        print("DETAILED CLASSIFICATION REPORT")
+        print("CLASSIFICATION REPORT")
         print("="*60)
         print("\n" + classification_report(
             self.y_test, y_test_pred, 
@@ -271,11 +205,6 @@ class SmartRideBaselineModel:
             'test_recall': test_recall,
             'test_f1': test_f1,
             'test_roc_auc': test_roc_auc,
-            'confusion_matrix': cm,
-            'cv_mean': cv_mean,
-            'cv_std': cv_std,
-            'cv_scores': cv_scores,
-            'bias_indicator': bias_indicator,
             'variance_indicator': train_test_gap
         }
         
@@ -318,20 +247,11 @@ class SmartRideBaselineModel:
             metrics: Dictionary of evaluation metrics
             save_path: Path to save visualization
         """
-        fig, axes = plt.subplots(2, 2, figsize=(15, 12))
+        fig, axes = plt.subplots(1, 2, figsize=(14, 5))
         fig.suptitle('Smart Ride Baseline Model - Performance Evaluation', 
                      fontsize=16, fontweight='bold')
         
-        # 1. Confusion Matrix
-        cm = metrics['confusion_matrix']
-        sns.heatmap(cm, annot=True, fmt='d', cmap='Blues', ax=axes[0, 0],
-                   xticklabels=['Reject', 'Accept'],
-                   yticklabels=['Reject', 'Accept'])
-        axes[0, 0].set_title('Confusion Matrix')
-        axes[0, 0].set_ylabel('True Label')
-        axes[0, 0].set_xlabel('Predicted Label')
-        
-        # 2. Performance Metrics Bar Chart
+        # 1. Performance Metrics Line Plot
         metric_names = ['Accuracy', 'Precision', 'Recall', 'F1-Score', 'ROC-AUC']
         metric_values = [
             metrics['test_accuracy'],
@@ -341,56 +261,46 @@ class SmartRideBaselineModel:
             metrics['test_roc_auc']
         ]
         
-        bars = axes[0, 1].bar(metric_names, metric_values, color=['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd'])
-        axes[0, 1].set_title('Test Set Performance Metrics')
-        axes[0, 1].set_ylim([0, 1])
-        axes[0, 1].axhline(y=0.5, color='red', linestyle='--', alpha=0.3, label='Random Baseline')
+        # Create line plot with markers
+        x_pos = range(len(metric_names))
+        axes[0].plot(x_pos, metric_values, marker='o', linewidth=2, markersize=8, 
+                     color='#1f77b4', markerfacecolor='#ff7f0e', markeredgecolor='#1f77b4')
+        axes[0].set_title('Test Set Performance Metrics')
+        axes[0].set_ylim([0, 1])
+        axes[0].axhline(y=0.5, color='red', linestyle='--', alpha=0.3, label='Random Baseline')
+        axes[0].set_xticks(x_pos)
+        axes[0].set_xticklabels(metric_names, rotation=45)
+        axes[0].set_ylabel('Score')
         
-        for bar in bars:
-            height = bar.get_height()
-            axes[0, 1].text(bar.get_x() + bar.get_width()/2., height,
-                          f'{height:.3f}',
-                          ha='center', va='bottom', fontweight='bold')
+        # Add value labels on points
+        for i, (x, y) in enumerate(zip(x_pos, metric_values)):
+            axes[0].text(x, y + 0.02, f'{y:.3f}', ha='center', va='bottom', fontweight='bold')
         
-        axes[0, 1].legend()
-        axes[0, 1].grid(axis='y', alpha=0.3)
+        axes[0].legend()
+        axes[0].grid(alpha=0.3)
         
-        # 3. Cross-Validation Scores
-        cv_scores = metrics['cv_scores']
-        folds = [f'Fold {i+1}' for i in range(len(cv_scores))]
-        axes[1, 0].plot(folds, cv_scores, marker='o', linewidth=2, markersize=8)
-        axes[1, 0].axhline(y=metrics['cv_mean'], color='green', linestyle='--', 
-                          label=f"Mean: {metrics['cv_mean']:.4f}")
-        axes[1, 0].axhline(y=metrics['cv_mean'] + metrics['cv_std'], 
-                          color='red', linestyle=':', alpha=0.5, label=f"±1 Std")
-        axes[1, 0].axhline(y=metrics['cv_mean'] - metrics['cv_std'], 
-                          color='red', linestyle=':', alpha=0.5)
-        axes[1, 0].set_title('Cross-Validation Accuracy Scores')
-        axes[1, 0].set_ylabel('Accuracy')
-        axes[1, 0].set_ylim([min(cv_scores) - 0.05, max(cv_scores) + 0.05])
-        axes[1, 0].legend()
-        axes[1, 0].grid(alpha=0.3)
+        # 2. Train vs Test Accuracy Comparison Line Plot
+        categories = ['Train', 'Test']
+        values = [metrics['train_accuracy'], metrics['test_accuracy']]
         
-        # 4. Bias-Variance Trade-off
-        categories = ['Train\nAccuracy', 'Test\nAccuracy', 'CV Mean\nAccuracy']
-        values = [metrics['train_accuracy'], metrics['test_accuracy'], metrics['cv_mean']]
-        colors_bv = ['#2ca02c', '#1f77b4', '#ff7f0e']
+        # Create line plot
+        x_pos = range(len(categories))
+        axes[1].plot(x_pos, values, marker='s', linewidth=3, markersize=10, 
+                     color='#2ca02c', markerfacecolor='#1f77b4', markeredgecolor='#2ca02c')
+        axes[1].set_title('Train vs Test Accuracy')
+        axes[1].set_ylabel('Accuracy')
+        axes[1].set_ylim([min(values) - 0.05, 1.0])
+        axes[1].set_xticks(x_pos)
+        axes[1].set_xticklabels(categories)
         
-        bars_bv = axes[1, 1].bar(categories, values, color=colors_bv)
-        axes[1, 1].set_title('Bias-Variance Analysis')
-        axes[1, 1].set_ylabel('Accuracy')
-        axes[1, 1].set_ylim([min(values) - 0.05, 1.0])
-        
-        for bar in bars_bv:
-            height = bar.get_height()
-            axes[1, 1].text(bar.get_x() + bar.get_width()/2., height,
-                          f'{height:.4f}',
-                          ha='center', va='bottom', fontweight='bold')
+        # Add value labels on points
+        for i, (x, y) in enumerate(zip(x_pos, values)):
+            axes[1].text(x, y + 0.02, f'{y:.4f}', ha='center', va='bottom', fontweight='bold')
         
         gap_text = f"Train-Test Gap: {metrics['variance_indicator']:.4f}"
-        axes[1, 1].text(0.5, 0.95, gap_text, transform=axes[1, 1].transAxes,
+        axes[1].text(0.5, 0.95, gap_text, transform=axes[1].transAxes,
                        ha='center', va='top', bbox=dict(boxstyle='round', facecolor='wheat', alpha=0.5))
-        axes[1, 1].grid(axis='y', alpha=0.3)
+        axes[1].grid(alpha=0.3)
         
         plt.tight_layout()
         
@@ -454,9 +364,9 @@ def main():
     print(f"\n  Model Type: Logistic Regression (Baseline)")
     print(f"  Test Accuracy: {metrics['test_accuracy']:.4f}")
     print(f"  Test F1-Score: {metrics['test_f1']:.4f}")
-    print(f"  Cross-Validation Stability: {metrics['cv_std']:.4f} std")
-    print(f"\nThis baseline establishes a performance floor for future models.")
-    print("Future improvements: Feature selection, ensemble methods, deep learning.\n")
+    print(f"  Train-Test Gap: {metrics['variance_indicator']:.4f}")
+    print(f"\nThis baseline establishes a starting point for future model improvements.")
+    print("Future work: Better feature engineering, ensemble methods, hyperparameter tuning.\n")
 
 
 if __name__ == "__main__":

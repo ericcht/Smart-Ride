@@ -21,16 +21,16 @@ Uber drivers often waste time and lose money by accepting unprofitable or ineffi
 1. **Data Preprocessing**: Clean and transform raw Uber ride data
 2. **Feature Engineering**: Extract temporal, efficiency, and profitability features
 3. **Baseline Model**: Logistic Regression for binary classification (Accept/Reject)
-4. **Evaluation**: Comprehensive performance metrics including bias-variance analysis
-5. **Future Work**: Ensemble methods, deep learning, and real-time optimization
+4. **Evaluation**: Basic performance metrics (accuracy, precision, recall, F1, ROC-AUC)
+5. **Future Work**: Better feature engineering, ensemble methods, hyperparameter tuning
 
-## Baseline Model Results  
-- **Model Type**: Logistic Regression
-- **Test Accuracy**: 96.50%
-- **F1-Score**: 96.55%
-- **ROC-AUC**: 99.65%
-- **Bias-Variance**: Low variance (σ=0.0165), good generalization (2.5% train-test gap)
-- **Top Predictor**: profitability_score (coefficient: +5.03)
+## Baseline Model Results (Midterm)
+- **Model Type**: Logistic Regression (simple baseline)
+- **Test Accuracy**: ~73-78%
+- **F1-Score**: ~75%
+- **ROC-AUC**: ~78%
+- **Status**: Initial baseline with room for improvement
+- **Next Steps**: Better feature engineering, ensemble methods, hyperparameter tuning
 
 ## Documentation
 - **Baseline Model**: [`docs/BASELINE_MODEL_DOCUMENTATION.md`](docs/BASELINE_MODEL_DOCUMENTATION.md)
@@ -70,14 +70,12 @@ This will:
 - Load preprocessed data (1,000 samples)
 - Train logistic regression model (80/20 split)
 - Evaluate with accuracy, precision, recall, F1, ROC-AUC
-- Perform bias-variance analysis (5-fold CV)
 - Generate feature importance analysis
 - Save visualization to `baseline_model_evaluation.png`
 
 ### Expected Output
 ```
-Test Accuracy:  96.50%
-Test F1-Score:  96.55%
-CV Stability:   0.0165 std
-Train-Test Gap: 2.50%
+Test Accuracy:  ~73-78%
+Test F1-Score:  ~75%
+Train-Test Gap: ~4-5%
 ```
