@@ -94,21 +94,13 @@ class SmartRideBaselineModel:
         print(f"Data shape: {df.shape}")
         print(f"Target distribution:\n{df['should_accept'].value_counts()}")
         
-        # FEATURE SELECTION: Exclude non-predictive and leakage columns
-        # CRITICAL: profitability_score EXCLUDED to prevent target leakage
-        # (should_accept was created FROM profitability_score, so including it = cheating)
+        # Drop non-feature columns
+        # IMPORTANT: Exclude profitability_score to avoid target leakage
         exclude_cols = [
-            'should_accept',           # Target variable (cannot be feature)
-            'profitability_score',     # TARGET LEAKAGE: used to create should_accept
-            'ride_id',                 # Identifier (no predictive value, overfitting risk)
-            'rider_id',                # Identifier (no predictive value)
-            'driver_id',               # Identifier (no predictive value)
-            'pickup_date',             # Temporal info already extracted to features
-            'pickup_time',             # Temporal info already extracted to features
-            'pickup_datetime',         # Temporal info already extracted to features
-            'pickup_location',         # Text data (requires separate encoding)
-            'drop_location',           # Text data (requires separate encoding)
-            'booking_status_nan'       # Single value after filtering (no variance)
+            'should_accept', 'profitability_score',
+            'ride_id', 'rider_id', 'driver_id',
+            'pickup_date', 'pickup_time', 'pickup_datetime',
+            'pickup_location', 'drop_location', 'booking_status_nan'
         ]
         
         feature_cols = [col for col in df.columns if col not in exclude_cols]
@@ -116,12 +108,10 @@ class SmartRideBaselineModel:
         X = df[feature_cols].copy()
         y = df['should_accept'].copy()
         
-        # DATA CLEANING: Handle missing and infinite values
-        # Median imputation (robust to outliers, better than mean)
+        # Handle any missing values
         X = X.fillna(X.median())
         
-        # Handle infinite values from division operations (e.g., fare_per_km)
-        # Replace infinities with NaN, then impute with median
+        # Remove any infinite values
         X = X.replace([np.inf, -np.inf], np.nan)
         X = X.fillna(X.median())
         
@@ -157,9 +147,7 @@ class SmartRideBaselineModel:
         print("TRAINING BASELINE MODEL (Logistic Regression)")
         print("="*60)
         
-        # FEATURE STANDARDIZATION: Z-score normalization (mean=0, std=1)
-        # Critical for logistic regression: ensures features on same scale
-        # Fit on training data only, then transform both train/test (prevents leakage)
+        # Standardize features (important for logistic regression)
         self.X_train_scaled = self.scaler.fit_transform(self.X_train)
         self.X_test_scaled = self.scaler.transform(self.X_test)
         

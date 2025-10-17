@@ -35,8 +35,6 @@ Uber drivers often waste time and lose money by accepting unprofitable or ineffi
 ## Documentation
 - **Baseline Model**: [`docs/BASELINE_MODEL_DOCUMENTATION.md`](docs/BASELINE_MODEL_DOCUMENTATION.md)
 - **Feature Engineering**: [`docs/FEATURE_ENGINEERING_DOCUMENTATION.md`](docs/FEATURE_ENGINEERING_DOCUMENTATION.md)
-  - Quick Summary: [`FEATURE_ENGINEERING_SUMMARY.md`](FEATURE_ENGINEERING_SUMMARY.md)
-  - Visual Pipeline: [`docs/FEATURE_ENGINEERING_PIPELINE.md`](docs/FEATURE_ENGINEERING_PIPELINE.md)
 
 ## Project Structure
 ```
@@ -45,15 +43,13 @@ Smart-Ride/
 │   ├── raw/                                    # Original datasets
 │   └── processed/                              # Preprocessed data
 ├── docs/
-│   ├── BASELINE_MODEL_DOCUMENTATION.md         # Comprehensive model documentation
-│   ├── FEATURE_ENGINEERING_DOCUMENTATION.md    # Detailed feature engineering docs
-│   └── FEATURE_ENGINEERING_PIPELINE.md         # Visual pipeline overview
+│   ├── BASELINE_MODEL_DOCUMENTATION.md         # Model documentation
+│   └── FEATURE_ENGINEERING_DOCUMENTATION.md    # Feature engineering docs
 ├── src/
 │   ├── preprocessing_data.py                   # Data cleaning and feature engineering
 │   └── baseline_model.py                       # Baseline logistic regression model
 ├── baseline_model_evaluation.png               # Performance visualization
-├── BASELINE_MODEL_SUMMARY.md                   # Quick summary of model results
-├── FEATURE_ENGINEERING_SUMMARY.md              # Quick feature engineering reference
+├── BASELINE_MODEL_SUMMARY.md                   # Model results summary
 ├── requirements.txt                            # Python dependencies
 └── README.md
 ```
