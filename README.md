@@ -18,20 +18,70 @@ Uber drivers often waste time and lose money by accepting unprofitable or ineffi
 - **Target Variable**: Ride profitability (derived from multiple factors)
 
 ## Approach
-1. **Baseline Model**: Linear Regression to establish profitability thresholds
-2. **Feature Engineering**: Extract relevant features from ride data
-3. **Classification**: Convert regression output to accept/reject decisions
-4. **Evaluation**: Accuracy, F1, ROC-AUC, and simulated driver earnings improvement
+1. **Data Preprocessing**: Clean and transform raw Uber ride data
+2. **Feature Engineering**: Extract temporal, efficiency, and profitability features
+3. **Baseline Model**: Logistic Regression for binary classification (Accept/Reject)
+4. **Evaluation**: Comprehensive performance metrics including bias-variance analysis
+5. **Future Work**: Ensemble methods, deep learning, and real-time optimization
+
+## Baseline Model Results ✓
+- **Model Type**: Logistic Regression
+- **Test Accuracy**: 96.50%
+- **F1-Score**: 96.55%
+- **ROC-AUC**: 99.65%
+- **Bias-Variance**: Low variance (σ=0.0165), good generalization (2.5% train-test gap)
+- **Top Predictor**: profitability_score (coefficient: +5.03)
+
+## Documentation
+- **Baseline Model**: [`docs/BASELINE_MODEL_DOCUMENTATION.md`](docs/BASELINE_MODEL_DOCUMENTATION.md)
+- **Feature Engineering**: [`docs/FEATURE_ENGINEERING_DOCUMENTATION.md`](docs/FEATURE_ENGINEERING_DOCUMENTATION.md)
+  - Quick Summary: [`FEATURE_ENGINEERING_SUMMARY.md`](FEATURE_ENGINEERING_SUMMARY.md)
+  - Visual Pipeline: [`docs/FEATURE_ENGINEERING_PIPELINE.md`](docs/FEATURE_ENGINEERING_PIPELINE.md)
 
 ## Project Structure
 ```
-├── data/                    # Raw and processed datasets
-├── notebooks/              # Jupyter notebooks for EDA and analysis
-├── src/                    # Source code modules
-│   ├── preprocessing.py    # Data cleaning and preprocessing
-│   ├── feature_engineering.py  # Feature extraction and selection
-│   ├── models.py          # ML model implementations
-│   └── evaluation.py      # Model evaluation metrics
-├── reports/               # Generated reports and visualizations
-└── requirements.txt       # Python dependencies
+Smart-Ride/
+├── data/
+│   ├── raw/                                    # Original datasets
+│   └── processed/                              # Preprocessed data
+├── docs/
+│   ├── BASELINE_MODEL_DOCUMENTATION.md         # Comprehensive model documentation
+│   ├── FEATURE_ENGINEERING_DOCUMENTATION.md    # Detailed feature engineering docs
+│   └── FEATURE_ENGINEERING_PIPELINE.md         # Visual pipeline overview
+├── src/
+│   ├── preprocessing_data.py                   # Data cleaning and feature engineering
+│   └── baseline_model.py                       # Baseline logistic regression model
+├── baseline_model_evaluation.png               # Performance visualization
+├── BASELINE_MODEL_SUMMARY.md                   # Quick summary of model results
+├── FEATURE_ENGINEERING_SUMMARY.md              # Quick feature engineering reference
+├── requirements.txt                            # Python dependencies
+└── README.md
+```
+
+## Quick Start
+
+### Installation
+```bash
+pip install -r requirements.txt
+```
+
+### Run Baseline Model
+```bash
+python src/baseline_model.py
+```
+
+This will:
+- Load preprocessed data (1,000 samples)
+- Train logistic regression model (80/20 split)
+- Evaluate with accuracy, precision, recall, F1, ROC-AUC
+- Perform bias-variance analysis (5-fold CV)
+- Generate feature importance analysis
+- Save visualization to `baseline_model_evaluation.png`
+
+### Expected Output
+```
+Test Accuracy:  96.50%
+Test F1-Score:  96.55%
+CV Stability:   0.0165 std
+Train-Test Gap: 2.50%
 ```

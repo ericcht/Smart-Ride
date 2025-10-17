@@ -159,6 +159,14 @@ class SmartRideRealDataPreprocessor:
         """
         Encode categorical variables using one-hot encoding.
         
+        CATEGORICAL FEATURE ENCODING:
+        - payment_type: Credit Card, Debit Card, UPI, Uber Wallet, Cash
+        - vehicle_type: Bike, Go Mini, Go Sedan, Premier Sedan, Uber XL, eBike, Pool
+        - booking_status: Completed (after filtering)
+        
+        Strategy: One-hot encoding with n-1 columns (drop_first=True)
+        Rationale: Prevents multicollinearity, preserves missing value info
+        
         Args:
             data: DataFrame with categorical columns
             
@@ -172,8 +180,9 @@ class SmartRideRealDataPreprocessor:
         
         for col in categorical_columns:
             if col in df.columns:
-                # One-hot encode with prefix and handle missing values
-                # need x-1 columns, so we need to drop one
+                # One-hot encode: creates binary (0/1) columns for each category
+                # drop_first=True: use n-1 columns for n categories (avoid multicollinearity)
+                # dummy_na=True: preserve missing value information
                 dummies = pd.get_dummies(df[col], prefix=col, dummy_na=True, drop_first=True)
                 df = pd.concat([df, dummies], axis=1)
                 df = df.drop(col, axis=1)
@@ -184,6 +193,12 @@ class SmartRideRealDataPreprocessor:
         """
         Create profitability-based features and target variable.
         
+        FEATURE ENGINEERING PIPELINE:
+        1. Temporal features: hour, day, month, weekend, rush_hour
+        2. Efficiency metrics: fare_per_km, fare_per_minute, speed_kmh
+        3. Profitability score: weighted combination of 5 factors
+        4. Binary target: should_accept (1 = accept, 0 = reject)
+        
         Args:
             data: Cleaned DataFrame
             
@@ -192,47 +207,63 @@ class SmartRideRealDataPreprocessor:
         """
         df = data.copy()
         
-        # Extract time features
+        # TEMPORAL FEATURE EXTRACTION
+        # Hour (0-23): captures surge pricing patterns
         df['pickup_hour'] = df['pickup_datetime'].dt.hour
+        # Day of week (0=Mon, 6=Sun): weekly patterns
         df['pickup_day_of_week'] = df['pickup_datetime'].dt.dayofweek
+        # Month (1-12): seasonal variations
         df['pickup_month'] = df['pickup_datetime'].dt.month
+        # Weekend flag: Sat/Sun have different patterns
         df['is_weekend'] = df['pickup_day_of_week'].isin([5, 6]).astype(int)
+        # Rush hour flag: 7-9 AM, 5-7 PM (high demand periods)
         df['is_rush_hour'] = df['pickup_hour'].isin([7, 8, 9, 17, 18, 19]).astype(int)
         
-        # Calculate efficiency metrics
+        # DERIVED EFFICIENCY METRICS
+        # Rate efficiency: higher fare per km = better value
         df['fare_per_km'] = df['fare_amount'] / (df['trip_distance'] + 1e-6)
+        # Time efficiency: higher fare per minute = better earnings
         df['fare_per_minute'] = df['fare_amount'] / (df['trip_duration'] + 1e-6)
+        # Speed metric: slower speed = traffic congestion penalty
         df['speed_kmh'] = df['trip_distance'] / (df['trip_duration'] / 60 + 1e-6)
         
-        # Create profitability score
-        # Factor 1: Fare efficiency (higher is better)
+        # PROFITABILITY SCORE ENGINEERING
+        # Composite metric combining 5 factors (weighted)
+        
+        # Factor 1 (30%): Fare efficiency percentile rank
         fare_efficiency = df['fare_per_km'].rank(pct=True)
         
-        # Factor 2: Distance preference (optimal around 5-15 km)
+        # Factor 2 (25%): Distance preference (optimal = 10km)
+        # Too short = low earnings, too long = time commitment
         optimal_distance = 10
         distance_score = 1 - np.abs(df['trip_distance'] - optimal_distance) / optimal_distance
         distance_score = np.maximum(0, distance_score)
         
-        # Factor 3: Time premium
+        # Factor 3 (20%): Time premium from surge pricing
+        # +30% bonus for rush hour, +20% bonus for weekend
         time_premium = df['is_rush_hour'] * 0.3 + df['is_weekend'] * 0.2
         
-        # Factor 4: Rating bonus
-        rating_bonus = (df['driver_rating'] - 3) / 2 * 0.1  # Scale rating to 0-0.1 bonus
+        # Factor 4 (15%): Rating quality bonus
+        # Scale ratings 3-5 to 0-0.1 bonus (ratings < 3 are poor)
+        rating_bonus = (df['driver_rating'] - 3) / 2 * 0.1
         rating_bonus = np.maximum(0, rating_bonus)
         
-        # Factor 5: Wait time penalty (shorter is better)
-        wait_penalty = 1 / (1 + df['wait_time'] / 5)  # Penalize long waits
+        # Factor 5 (10%): Wait time penalty (exponential decay)
+        # Shorter wait = better efficiency
+        wait_penalty = 1 / (1 + df['wait_time'] / 5)
         
-        # Combine factors
+        # Weighted combination of all factors
         df['profitability_score'] = (
-            fare_efficiency * 0.3 +
+            fare_efficiency * 0.3 +    # Most important
             distance_score * 0.25 +
             time_premium * 0.2 +
             rating_bonus * 0.15 +
-            wait_penalty * 0.1
+            wait_penalty * 0.1         # Least important
         )
         
-        # Create binary target: accept (1) if profitability > median, reject (0) otherwise
+        # BINARY TARGET CREATION
+        # Split rides at median: top 50% = accept (1), bottom 50% = reject (0)
+        # This creates balanced classes for classification
         median_profitability = df['profitability_score'].median()
         df['should_accept'] = (df['profitability_score'] > median_profitability).astype(int)
         
