@@ -129,14 +129,6 @@ class SmartRideRealDataPreprocessor:
         mapped_df['tip_amount'] = 0  # Tips not available in this dataset
         mapped_df['total_amount'] = mapped_df['fare_amount']  # Same as fare for this dataset
         
-        # Create dummy coordinates (since we don't have actual lat/lng)
-        np.random.seed(42)  # For reproducibility
-        n_rows = len(mapped_df)
-        mapped_df['pickup_latitude'] = np.random.normal(28.6139, 0.1, n_rows)  # Delhi area
-        mapped_df['pickup_longitude'] = np.random.normal(77.2090, 0.1, n_rows)
-        mapped_df['dropoff_latitude'] = np.random.normal(28.6139, 0.1, n_rows)
-        mapped_df['dropoff_longitude'] = np.random.normal(77.2090, 0.1, n_rows)
-        
         # Add driver_id (not available, so create dummy)
         mapped_df['driver_id'] = ['driver_' + str(i).zfill(4) for i in range(1, len(mapped_df) + 1)]
         

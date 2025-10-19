@@ -6,12 +6,6 @@ Author: Team 5 (Jeffery Chen, Alex Chen, Eric Chtilianov, Ethan Dietrich)
 This baseline model uses Logistic Regression for binary classification to predict
 whether a driver should accept (1) or reject (0) a ride request.
 
-Model Details:
-- Algorithm: Logistic Regression with L2 regularization
-- Input: 32 engineered features
-- Output: Binary prediction (accept/reject)
-- Performance: ~73-78% accuracy baseline
-
 Features Used:
 - Numeric: fare_amount, trip_distance, wait_time, trip_duration, ratings
 - Temporal: pickup_hour, day_of_week, is_weekend, is_rush_hour
@@ -52,7 +46,7 @@ class SmartRideBaselineModel:
             data_path: Path to preprocessed data
             random_state: Random seed for reproducibility
         """
-        self.data_path = data_path or "data/processed/uber_real_data_processed_sample.csv"
+        self.data_path = data_path or "data/processed/uber_real_data_processed.csv"
         self.random_state = random_state
         self.model = None
         self.scaler = StandardScaler()
@@ -352,7 +346,7 @@ def main():
     """
     # Initialize and run baseline model
     baseline = SmartRideBaselineModel(
-        data_path="data/processed/uber_real_data_processed_sample.csv"
+        data_path="data/processed/uber_real_data_processed.csv"
     )
     
     metrics, feature_importance = baseline.run_baseline_pipeline()
