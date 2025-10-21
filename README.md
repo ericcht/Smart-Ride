@@ -4,7 +4,7 @@
 This project aims to create a machine learning model that helps Uber drivers make informed decisions about whether to accept or decline ride requests by predicting ride profitability.
 
 ## Team Members
-- Jeffery Chen
+- Jeffrey Chen
 - Alex Chen  
 - Eric Chtilianov
 - Ethan Dietrich
@@ -18,14 +18,14 @@ Uber drivers often waste time and lose money by accepting unprofitable or ineffi
 - **Target Variable**: Ride profitability (derived from multiple factors)
 
 ## Approach
-1. **Baseline Model**: Linear Regression to establish profitability thresholds
+1. **Baseline Model**: Logistic Regression to establish profitability thresholds
 2. **Feature Engineering**: Extract relevant features from ride data
 3. **Classification**: Convert regression output to accept/reject decisions
 4. **Evaluation**: Accuracy, F1, ROC-AUC, and simulated driver earnings improvement
 
 ## Project Structure
 ```
-├── data/                    # Raw and processed datasets
+├── data/                   # Raw and processed datasets
 ├── notebooks/              # Jupyter notebooks for EDA and analysis
 ├── src/                    # Source code modules
 │   ├── preprocessing.py    # Data cleaning and preprocessing
