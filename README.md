@@ -25,13 +25,9 @@ Uber drivers often waste time and lose money by accepting unprofitable or ineffi
 
 ## Project Structure
 ```
-├── data/                   # Raw and processed datasets
-├── notebooks/              # Jupyter notebooks for EDA and analysis
-├── src/                    # Source code modules
-│   ├── preprocessing.py    # Data cleaning and preprocessing
-│   ├── feature_engineering.py  # Feature extraction and selection
-│   ├── models.py          # ML model implementations
-│   └── evaluation.py      # Model evaluation metrics
-├── reports/               # Generated reports and visualizations
-└── requirements.txt       # Python dependencies
+├── data/                        # Raw and processed datasets
+├── src/                         # Source code modules
+│   ├── preprocessing_data.py    # Data cleaning and preprocessing
+│   ├── baseline_model.py        # ML model implementations    
+└── requirements.txt             # Python dependencies
 ```
