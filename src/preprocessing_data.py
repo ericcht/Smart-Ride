@@ -276,6 +276,65 @@ class SmartRideRealDataPreprocessor:
         
         return processed_data, preprocessing_info
     
+    def perform_exploratory_data_analysis(self, df: pd.DataFrame):
+        """
+        Perform exploratory data analysis (EDA) on the cleaned dataset.
+        Includes descriptive statistics, correlation analysis, and visualizations.
+        """
+        import seaborn as sns
+        import matplotlib.pyplot as plt
+        
+        print("\n" + "="*60)
+        print("EXPLORATORY DATA ANALYSIS (EDA)")
+        print("="*60)
+        
+        # Basic dataset overview
+        print("\nBasic Dataset Info:")
+        print(df.describe(include='all').transpose().head(10))
+        
+        # 1. Distribution of ride distances
+        plt.figure(figsize=(8, 4))
+        sns.histplot(df['trip_distance'], bins=30, kde=True)
+        plt.title("Distribution of Ride Distances")
+        plt.xlabel("Trip Distance (km)")
+        plt.ylabel("Frequency")
+        plt.show()
+        
+        # 2. Fare vs. distance relationship
+        plt.figure(figsize=(6, 5))
+        sns.scatterplot(x='trip_distance', y='fare_amount', data=df, alpha=0.5)
+        plt.title("Fare vs. Distance")
+        plt.xlabel("Distance (km)")
+        plt.ylabel("Fare ($)")
+        plt.show()
+        
+        # 3. Correlation analysis (Pearson)
+        numeric_cols = ['fare_amount', 'trip_distance', 'wait_time', 'trip_duration', 'driver_rating', 'customer_rating']
+        corr = df[numeric_cols].corr(method='pearson')
+        print("\nCorrelation Matrix (Pearson):")
+        print(corr.round(2))
+        
+        plt.figure(figsize=(7, 5))
+        sns.heatmap(corr, annot=True, cmap='coolwarm', fmt='.2f')
+        plt.title("Feature Correlation Heatmap")
+        plt.show()
+        
+        # 4. Relationship between wait time and duration
+        sns.jointplot(x='wait_time', y='trip_duration', data=df, kind='scatter', alpha=0.5)
+        plt.suptitle("Wait Time vs. Trip Duration", y=1.02)
+        plt.show()
+        
+        # 5. Profitability distribution
+        if 'profitability_score' in df.columns:
+            sns.histplot(df['profitability_score'], bins=30, kde=True, color='green')
+            plt.title("Distribution of Profitability Scores")
+            plt.xlabel("Profitability Score")
+            plt.ylabel("Frequency")
+            plt.show()
+        
+        print("\nEDA Complete: Insights can now be summarized in the report.")
+
+    
     def save_processed_data(self, output_path: str = None):
         """
         Save the processed data to file.

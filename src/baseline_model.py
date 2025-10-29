@@ -38,6 +38,9 @@ import seaborn as sns
 import warnings
 warnings.filterwarnings('ignore')
 
+from preprocessing_data import SmartRideRealDataPreprocessor
+
+
 
 class SmartRideBaselineModel:
     """
@@ -350,6 +353,16 @@ def main():
     """
     Main execution function for baseline model.
     """
+
+    # Load and perform EDA
+    print("\n" + "="*70)
+    print(" EXPLORATORY DATA ANALYSIS (EDA)")
+    print("="*70)
+    
+    preprocessor = SmartRideRealDataPreprocessor(data_path="data/processed/uber_real_data_processed.csv")
+    df = preprocessor.load_data()  # You might have a method for this, or just use pandas.read_csv()
+    preprocessor.perform_exploratory_data_analysis(df)
+
     # Initialize and run baseline model
     baseline = SmartRideBaselineModel(
         data_path="data/processed/uber_real_data_processed_sample.csv"
