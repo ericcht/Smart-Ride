@@ -120,7 +120,7 @@ A composite score combining five weighted factors:
 | Factor | Description | Weight |
 |--------|-------------|--------|
 | **Fare Efficiency** | Higher earnings per km ranked as percentile | 0.30 |
-| **Distance Preference** | Optimal range between 5–15 km (reduces fatigue and idle time) | 0.25 |
+| **Distance Preference** | Categorical scoring: Short (0-10 km): 0.8, Medium (10-25 km): 1.0, Long (25-40 km): 0.6, Very Long (40+ km): 0.3 | 0.25 |
 | **Time Premium** | Rewards rides during rush hours and weekends | 0.20 |
 | **Rating Bonus** | Incentivizes high-rated drivers (service quality proxy) | 0.15 |
 | **Wait Time Penalty** | Penalizes long passenger wait times | 0.10 |

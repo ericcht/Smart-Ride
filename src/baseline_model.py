@@ -77,7 +77,10 @@ class SmartRideBaselineModel:
             'ride_id', 'rider_id', 'driver_id',
             'pickup_date', 'pickup_time', 'pickup_datetime',
             'pickup_location', 'drop_location', 'booking_status_nan', 'total_amount',
-            'trip_duration', 'wait_time', 'fare_per_km', 'fare_per_minute', 'speed_kmh'
+            'trip_duration', 'wait_time', 'fare_per_minute', 'speed_kmh',
+            'customer_rating', 'fare_per_km',
+            # Tip amount (not known at decision time, also set to 0 in this dataset)
+            'tip_amount'
         ]
         
         feature_cols = [col for col in df.columns if col not in exclude_cols]
@@ -85,12 +88,23 @@ class SmartRideBaselineModel:
         X = df[feature_cols].copy()
         y = df['should_accept'].copy()
         
-        # Handle any missing values
-        X = X.fillna(X.median())
+        # Handle any missing values appropriately by column type
+        for col in X.columns:
+            if X[col].dtype in ['int64', 'float64']:
+                # Numeric columns: use median
+                X[col] = X[col].fillna(X[col].median())
+            else:
+                # Boolean/one-hot encoded columns: fill with 0 (no category)
+                X[col] = X[col].fillna(0)
         
         # Remove any infinite values
         X = X.replace([np.inf, -np.inf], np.nan)
-        X = X.fillna(X.median())
+        # Fill infinite values with median for numeric, 0 for boolean
+        for col in X.columns:
+            if X[col].dtype in ['int64', 'float64']:
+                X[col] = X[col].fillna(X[col].median())
+            else:
+                X[col] = X[col].fillna(0)
         
         self.feature_columns = feature_cols
         print(f"Number of features: {len(feature_cols)}")
