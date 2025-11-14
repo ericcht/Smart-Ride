@@ -200,7 +200,7 @@ class SmartRideAdvancedModels:
         print(f"  Out-of-Bag (OOB) Score: {self.rf_model.oob_score_:.4f}")
         print(f"    (OOB score indicates generalization - should be close to test accuracy)")
     
-    def train_baseline_for_ensemble(self):
+    def train_baseline(self):
         """
         Train baseline Logistic Regression model.
         
@@ -527,7 +527,7 @@ class SmartRideAdvancedModels:
         self.split_data(X, y, time_based=time_based_split, pickup_datetime=pickup_datetime)
         
         # Train baseline Logistic Regression
-        self.train_baseline_for_ensemble()
+        self.train_baseline()
         
         # Train Random Forest with regularization to prevent overfitting
         self.train_random_forest(
