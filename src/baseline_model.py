@@ -11,6 +11,7 @@ Features Used:
 - Temporal: pickup_hour, day_of_week, is_weekend, is_rush_hour
 - Derived: fare_per_km, fare_per_minute, speed_kmh
 - Categorical: One-hot encoded payment_type and vehicle_type
+- Note: total_amount excluded (redundant with fare_amount)
 
 Target Variable:
 - should_accept: Binary (1 = accept, 0 = reject)
@@ -75,7 +76,8 @@ class SmartRideBaselineModel:
             'should_accept', 'profitability_score',
             'ride_id', 'rider_id', 'driver_id',
             'pickup_date', 'pickup_time', 'pickup_datetime',
-            'pickup_location', 'drop_location', 'booking_status_nan'
+            'pickup_location', 'drop_location', 'booking_status_nan',
+            'total_amount'
         ]
         
         feature_cols = [col for col in df.columns if col not in exclude_cols]
