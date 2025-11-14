@@ -197,40 +197,79 @@ class SmartRideRealDataPreprocessor:
         df['fare_per_minute'] = df['fare_amount'] / (df['trip_duration'] + 1e-6)
         df['speed_kmh'] = df['trip_distance'] / (df['trip_duration'] / 60 + 1e-6)
         
-        # Create profitability score
-        # Factor 1: Fare efficiency (higher is better)
+        # Create improved profitability score
+        # Factor 1: Fare efficiency per km (normalized to percentile)
         fare_efficiency = df['fare_per_km'].rank(pct=True)
         
-        # Factor 2: Distance preference (optimal around 5-15 km)
-        optimal_distance = 10
-        distance_score = 1 - np.abs(df['trip_distance'] - optimal_distance) / optimal_distance
-        distance_score = np.maximum(0, distance_score)
+        # Factor 2: Time efficiency per minute (NEW - earnings per minute)
+        time_efficiency = df['fare_per_minute'].rank(pct=True)
         
-        # Factor 3: Time premium
-        time_premium = df['is_rush_hour'] * 0.3 + df['is_weekend'] * 0.2
+        # Factor 3: Distance preference (categorical scoring)
+        # Short (0-10 km): Good turnover, frequent rides
+        # Medium (10-25 km): Optimal range - good balance of fare and time
+        # Long (25-40 km): Acceptable but less ideal
+        # Very Long (40+ km): Penalize - too much time commitment
+        def calculate_distance_score(distance):
+            """Score rides based on distance category."""
+            if distance <= 10:
+                return 0.8  # Short: good turnover
+            elif distance <= 25:
+                return 1.0  # Medium: optimal range
+            elif distance <= 40:
+                return 0.6  # Long: acceptable but less ideal
+            else:
+                return 0.3  # Very long: penalize
         
-        # Factor 4: Rating bonus
+        distance_score = df['trip_distance'].apply(calculate_distance_score)
+        
+        # Factor 4: Enhanced time premium (hour-specific bonuses)
+        hour_bonus = df['pickup_hour'].apply(lambda h: 
+            0.3 if h in [7, 8, 9] else  # Morning rush
+            0.3 if h in [17, 18, 19] else  # Evening rush
+            0.15 if h in [20, 21, 22] else  # Late evening (surge pricing)
+            0.1 if h in [10, 11, 12, 13, 14, 15, 16] else  # Daytime
+            0.05  # Late night/early morning
+        )
+        weekend_bonus = df['is_weekend'] * 0.2
+        time_premium = hour_bonus + weekend_bonus
+        # Normalize to 0-1 range
+        if time_premium.max() > 0:
+            time_premium = time_premium / time_premium.max()
+        
+        # Factor 5: Rating bonus
         rating_bonus = (df['driver_rating'] - 3) / 2 * 0.1  # Scale rating to 0-0.1 bonus
         rating_bonus = np.maximum(0, rating_bonus)
+        # Normalize to 0-1 range
+        if rating_bonus.max() > 0:
+            rating_bonus = rating_bonus / rating_bonus.max()
         
-        # Factor 5: Wait time penalty (shorter is better)
-        wait_penalty = 1 / (1 + df['wait_time'] / 5)  # Penalize long waits
+        # Factor 6: Wait time penalty (shorter is better)
+        wait_penalty = 1 / (1 + df['wait_time'] / 5)  # Already 0-1 range
         
-        # Combine factors
+        # Factor 7: Duration efficiency (NEW - penalize very long trips)
+        # Shorter trips = more turnover = better profitability
+        duration_efficiency = 1 / (1 + df['trip_duration'] / 30)  # Penalize trips > 30 min
+        
+        # Combine factors with improved weights
         df['profitability_score'] = (
-            fare_efficiency * 0.3 +
-            distance_score * 0.25 +
-            time_premium * 0.2 +
-            rating_bonus * 0.15 +
-            wait_penalty * 0.1
+            fare_efficiency * 0.26 +     # Fare efficiency is more important
+            time_efficiency * 0.21 +     # Time efficiency is more important
+            distance_score * 0.20 +      # Distance is important
+            time_premium * 0.15 +        # Time premium is important
+            rating_bonus * 0.10 +        # Rating bonus is important
+            wait_penalty * 0.05 +        # Wait penalty is important
+            duration_efficiency * 0.03  # Duration efficiency is important
         )
         
-        # Create binary target: accept (1) if profitability > median, reject (0) otherwise
-        median_profitability = df['profitability_score'].median()
-        df['should_accept'] = (df['profitability_score'] > median_profitability).astype(int)
+        # Improved threshold: use percentile instead of median
+        # Top 40% are "should accept" (more selective than 50% median)
+        threshold_percentile = 0.4
+        threshold_value = df['profitability_score'].quantile(1 - threshold_percentile)
+        df['should_accept'] = (df['profitability_score'] > threshold_value).astype(int)
         
         print(f"Target distribution: {df['should_accept'].value_counts().to_dict()}")
         print(f"Average profitability score: {df['profitability_score'].mean():.3f}")
+        print(f"Threshold (top {threshold_percentile*100}%): {threshold_value:.3f}")
         
         return df
     
