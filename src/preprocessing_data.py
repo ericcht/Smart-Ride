@@ -142,6 +142,7 @@ class SmartRideRealDataPreprocessor:
         # No conversion needed - they're already in the correct units
         
         # Add pickup time (not available, estimate from wait time)
+        np.random.seed(42)
         mapped_df['pickup_time'] = mapped_df['wait_time'] * np.random.uniform(0.5, 2.0, len(mapped_df))
         
         print(f"Final cleaned dataset shape: {mapped_df.shape}")

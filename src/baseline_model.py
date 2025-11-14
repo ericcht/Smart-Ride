@@ -76,8 +76,8 @@ class SmartRideBaselineModel:
             'should_accept', 'profitability_score',
             'ride_id', 'rider_id', 'driver_id',
             'pickup_date', 'pickup_time', 'pickup_datetime',
-            'pickup_location', 'drop_location', 'booking_status_nan',
-            'total_amount'
+            'pickup_location', 'drop_location', 'booking_status_nan', 'total_amount',
+            'trip_duration', 'wait_time', 'fare_per_km', 'fare_per_minute', 'speed_kmh'
         ]
         
         feature_cols = [col for col in df.columns if col not in exclude_cols]
