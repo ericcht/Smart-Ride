@@ -11,6 +11,7 @@ Features Used:
 - Temporal: pickup_hour, day_of_week, is_weekend, is_rush_hour
 - Derived: fare_per_km, fare_per_minute, speed_kmh
 - Categorical: One-hot encoded payment_type and vehicle_type
+- Note: total_amount excluded (redundant with fare_amount)
 
 Target Variable:
 - should_accept: Binary (1 = accept, 0 = reject)
