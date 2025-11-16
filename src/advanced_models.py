@@ -95,14 +95,15 @@ class SmartRideAdvancedModels:
         # Drop non-feature columns (same exclusions as baseline)
         # IMPORTANT: Exclude profitability_score to avoid target leakage
         exclude_cols = [
-            'should_accept', 'profitability_score',
-            'ride_id', 'rider_id', 'driver_id',
-            'pickup_date', 'pickup_time', 'pickup_datetime',
-            'pickup_location', 'drop_location', 'booking_status_nan', 'total_amount',
-            'trip_duration', 'wait_time', 'fare_per_minute', 'speed_kmh',
-            'customer_rating', 'fare_per_km',
-            # Tip amount (not known at decision time, also set to 0 in this dataset)
-            'tip_amount'
+        'should_accept', 'profitability_score',
+        'ride_id', 'rider_id', 'driver_id',
+        'pickup_date', 'pickup_time', 'pickup_datetime',
+        'pickup_location', 'drop_location', 'booking_status_nan', 'total_amount',
+        'trip_duration', 'wait_time', 'fare_per_minute', 'speed_kmh',
+        'customer_rating', 'fare_per_km',
+        'pickup_latitude', 'pickup_longitude',
+        'dropoff_latitude', 'dropoff_longitude',
+        'tip_amount'
         ]
         
         feature_cols = [col for col in df.columns if col not in exclude_cols]
