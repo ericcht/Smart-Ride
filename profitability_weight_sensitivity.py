@@ -237,9 +237,7 @@ def run_profitability_weight_sensitivity(
     if data_path is None:
         possible_paths = [
             "data/processed/uber_real_data_processed.csv",
-            "data/processed/uber_real_data_processed_sample.csv",
             os.path.join(script_dir, "data/processed/uber_real_data_processed.csv"),
-            os.path.join(script_dir, "data/processed/uber_real_data_processed_sample.csv"),
         ]
         for path in possible_paths:
             if os.path.exists(path):
