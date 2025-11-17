@@ -55,7 +55,7 @@ class SmartRideAdvancedModels:
             data_path: Path to preprocessed data
             random_state: Random seed for reproducibility
         """
-        self.data_path = data_path or "data/processed/uber_real_data_processed_sample.csv"
+        self.data_path = data_path or "data/processed/uber_real_data_processed.csv"
         self.random_state = random_state
         self.rf_model = None
         self.baseline_model = None
@@ -1190,7 +1190,7 @@ def main():
     """
     # Initialize and run complete pipeline
     models = SmartRideAdvancedModels(
-        data_path="data/processed/uber_real_data_processed_sample.csv"
+        data_path="data/processed/uber_real_data_processed.csv"
     )
     
     comparison_df, feature_importance = models.run_complete_pipeline(
