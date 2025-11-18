@@ -227,9 +227,9 @@ class SmartRideAdvancedModels:
         # Train logistic regression with same parameters as baseline
         self.baseline_model = LogisticRegression(
             random_state=self.random_state,
-            max_iter=500,
+            max_iter=1000,
             solver='lbfgs',
-            C=0.5
+            C=0.1
         )
         
         self.baseline_model.fit(self.X_train_scaled, self.y_train)
@@ -564,20 +564,87 @@ class SmartRideAdvancedModels:
         
         # Calculate SHAP values
         print("Calculating SHAP values...")
-        shap_values = explainer.shap_values(X_sample)
-        
-        # For binary classification, handle both single and double output
-        if isinstance(shap_values, list):
-            shap_values = shap_values[1]  # Use positive class
-        
-        # Ensure shap_values is numpy array
-        shap_values = np.array(shap_values)
+        shap_values_raw = explainer.shap_values(X_sample)
         
         # Get actual feature names from sample data
         if hasattr(X_sample, 'columns'):
             actual_feature_names = list(X_sample.columns)
         else:
             actual_feature_names = self.feature_columns
+        n_features = len(actual_feature_names)
+        n_samples = len(X_sample) if hasattr(X_sample, '__len__') else 1
+        
+        # Debug: Print raw SHAP shape
+        print(f"  Raw SHAP values type: {type(shap_values_raw)}")
+        if isinstance(shap_values_raw, list):
+            print(f"  SHAP list length: {len(shap_values_raw)}")
+            for i, sv in enumerate(shap_values_raw):
+                print(f"    Class {i} shape: {np.array(sv).shape}")
+        else:
+            print(f"  SHAP array shape: {np.array(shap_values_raw).shape}")
+        
+        # For binary classification, handle different output formats
+        if isinstance(shap_values_raw, list):
+            # List format: [shap_class_0, shap_class_1] for binary classification
+            # Each element should be shape (n_samples, n_features)
+            if len(shap_values_raw) == 2:
+                # Binary classification - use positive class (index 1)
+                shap_values = np.array(shap_values_raw[1])
+                print(f"  Using positive class (index 1), shape: {shap_values.shape}")
+            else:
+                # Multi-class or unexpected format
+                shap_values = np.array(shap_values_raw[1] if len(shap_values_raw) > 1 else shap_values_raw[0])
+                print(f"  Using class index 1 from {len(shap_values_raw)} classes, shape: {shap_values.shape}")
+        else:
+            # Single array format
+            shap_values = np.array(shap_values_raw)
+            print(f"  Single array format, shape: {shap_values.shape}")
+        
+        # Handle shape issues - ensure 2D array (n_samples, n_features)
+        if len(shap_values.shape) == 3:
+            # Shape is (n_samples, n_features, n_classes) - take positive class
+            if shap_values.shape[2] == 2:
+                shap_values = shap_values[:, :, 1]  # Positive class for binary
+                print(f"  Extracted positive class from 3D array, new shape: {shap_values.shape}")
+            else:
+                shap_values = shap_values[:, :, 0]
+                print(f"  Extracted first class from 3D array, new shape: {shap_values.shape}")
+        elif len(shap_values.shape) == 1:
+            # Single sample case - reshape to (1, n_features)
+            if shap_values.shape[0] == n_features:
+                shap_values = shap_values.reshape(1, -1)
+            elif shap_values.shape[0] == n_features * 2:
+                # Both classes concatenated - take second half (positive class)
+                shap_values = shap_values[n_features:].reshape(1, -1)
+                print(f"  Extracted positive class from concatenated 1D array")
+            else:
+                # Try to reshape based on number of samples
+                if shap_values.shape[0] == n_samples * n_features:
+                    shap_values = shap_values.reshape(n_samples, n_features)
+                elif shap_values.shape[0] == n_samples * n_features * 2:
+                    # Both classes - take positive class
+                    shap_values = shap_values[n_samples * n_features:].reshape(n_samples, n_features)
+                    print(f"  Extracted positive class from concatenated array")
+        
+        # Ensure shape matches number of features
+        if shap_values.shape[1] != n_features:
+            # If we have more columns than features, this is likely an error
+            if shap_values.shape[1] == n_features * 2:
+                # Both classes side by side - take second half
+                print(f"  Detected both classes side-by-side, extracting positive class")
+                shap_values = shap_values[:, n_features:]
+            elif shap_values.shape[1] > n_features:
+                print(f"  Warning: SHAP returned {shap_values.shape[1]} values for {n_features} features. Taking first {n_features}.")
+                shap_values = shap_values[:, :n_features]
+            elif shap_values.shape[1] < n_features:
+                print(f"  Warning: SHAP returned {shap_values.shape[1]} values for {n_features} features. This may indicate an issue.")
+        
+        # Final check - ensure we have correct shape
+        if shap_values.shape[1] != n_features:
+            raise ValueError(f"SHAP shape mismatch: expected {n_features} features, got {shap_values.shape[1]}. "
+                           f"SHAP shape: {shap_values.shape}, n_samples: {n_samples}, n_features: {n_features}")
+        
+        print(f"  Final SHAP values shape: {shap_values.shape} (should be ({n_samples}, {n_features}))")
         
         setattr(self, values_attr, shap_values)
         
@@ -665,28 +732,17 @@ class SmartRideAdvancedModels:
         plt.close('all')
         
         # Print top features
+        # Calculate mean absolute SHAP values across samples
         mean_abs_shap = np.abs(shap_values).mean(axis=0)
-        # Ensure 1D array
-        if len(mean_abs_shap.shape) > 1:
-            mean_abs_shap = mean_abs_shap.flatten()
         
-        # Ensure arrays match in length
-        n_features = len(actual_feature_names)
-        n_shap = len(mean_abs_shap)
+        # Ensure 1D array matching number of features
+        mean_abs_shap = mean_abs_shap.flatten()[:n_features]
         
-        if n_shap != n_features:
-            # Take only the matching number of features
-            min_len = min(n_features, n_shap)
-            feature_importance_shap = pd.DataFrame({
-                'feature': actual_feature_names[:min_len],
-                'mean_abs_shap': mean_abs_shap[:min_len]
-            }).sort_values('mean_abs_shap', ascending=False)
-            print(f"Warning: Feature count mismatch (features: {n_features}, SHAP: {n_shap}). Using first {min_len}.")
-        else:
-            feature_importance_shap = pd.DataFrame({
-                'feature': actual_feature_names,
-                'mean_abs_shap': mean_abs_shap
-            }).sort_values('mean_abs_shap', ascending=False)
+        # Create feature importance dataframe
+        feature_importance_shap = pd.DataFrame({
+            'feature': actual_feature_names,
+            'mean_abs_shap': mean_abs_shap
+        }).sort_values('mean_abs_shap', ascending=False)
         
         print(f"\nTop 15 Most Important Features (by mean |SHAP value|):")
         print("-" * 60)
@@ -743,54 +799,80 @@ class SmartRideAdvancedModels:
             actual_feature_names = list(X_single.columns)
         else:
             actual_feature_names = self.feature_columns
+        n_features = len(actual_feature_names)
         
         # Calculate SHAP values
-        shap_values = explainer.shap_values(X_single)
-        if isinstance(shap_values, list):
-            shap_values = shap_values[1]
+        shap_values_raw = explainer.shap_values(X_single)
         
-        # Ensure numpy array
-        shap_values = np.array(shap_values)
-        
-        # Get prediction
-        if model_type == 'random_forest':
-            prediction = model.predict(X_single)[0]
-            proba = model.predict_proba(X_single)[0]
+        # For binary classification, handle different output formats
+        if isinstance(shap_values_raw, list):
+            # List format: [shap_class_0, shap_class_1] for binary classification
+            if len(shap_values_raw) == 2:
+                # Binary classification - use positive class (index 1)
+                shap_values = np.array(shap_values_raw[1])
+            else:
+                # Multi-class or unexpected format
+                shap_values = np.array(shap_values_raw[1] if len(shap_values_raw) > 1 else shap_values_raw[0])
         else:
-            prediction = model.predict(X_single)[0]
-            proba = model.predict_proba(X_single)[0]
+            # Single array format
+            shap_values = np.array(shap_values_raw)
         
-        print(f"\nSample Index: {sample_index}")
-        print(f"Prediction: {prediction} ({'Accept' if prediction == 1 else 'Reject'})")
-        print(f"Probability: Reject={proba[0]:.4f}, Accept={proba[1]:.4f}")
-        print(f"Actual: {self.y_test.iloc[sample_index]}")
+        # Handle shape issues - ensure 2D array (n_samples, n_features)
+        if len(shap_values.shape) == 3:
+            # Shape is (n_samples, n_features, n_classes) - take positive class
+            if shap_values.shape[2] == 2:
+                shap_values = shap_values[:, :, 1]  # Positive class for binary
+            else:
+                shap_values = shap_values[:, :, 0]
+        elif len(shap_values.shape) == 1:
+            # Single sample case - reshape to (1, n_features)
+            if shap_values.shape[0] == n_features:
+                shap_values = shap_values.reshape(1, -1)
+            elif shap_values.shape[0] == n_features * 2:
+                # Both classes concatenated - take second half (positive class)
+                shap_values = shap_values[n_features:].reshape(1, -1)
+            else:
+                # Try to reshape
+                if shap_values.shape[0] == n_features:
+                    shap_values = shap_values.reshape(1, -1)
         
-        # Handle shap_values shape and prepare variables FIRST
+        # Ensure shape matches number of features
+        if shap_values.shape[1] != n_features:
+            if shap_values.shape[1] == n_features * 2:
+                # Both classes side by side - take second half
+                shap_values = shap_values[:, n_features:]
+            elif shap_values.shape[1] > n_features:
+                shap_values = shap_values[:, :n_features]
+            elif shap_values.shape[1] < n_features and shap_values.shape[0] == 1:
+                # Single sample with wrong shape - try to fix
+                if shap_values.shape[1] * 2 == n_features:
+                    # Might be interleaved
+                    shap_values = shap_values[:, ::2]  # Take every other
+        
+        # Final check - ensure we have correct shape
+        if shap_values.shape[1] != n_features:
+            raise ValueError(f"SHAP shape mismatch: expected {n_features} features, got {shap_values.shape[1]}. "
+                           f"SHAP shape: {shap_values.shape}, n_features: {n_features}")
+        
+        # Extract SHAP values for single sample (should be shape (1, n_features) after our fix)
         if len(shap_values.shape) > 1:
-            shap_vals = shap_values[0]
+            shap_vals = shap_values[0]  # Get first (and only) sample
         else:
             shap_vals = shap_values
         
-        shap_vals = np.array(shap_vals).flatten()
+        shap_vals = np.array(shap_vals).flatten()[:n_features]  # Ensure correct length
         
+        # Get feature values
         if hasattr(X_single, 'iloc'):
             feature_vals = X_single.iloc[0].values
         else:
             feature_vals = np.array(X_single[0]).flatten()
         
-        # Ensure arrays match in length BEFORE plotting
-        n_features = len(actual_feature_names)
-        n_shap = len(shap_vals)
-        n_vals = len(feature_vals)
-        min_len = min(n_features, n_shap, n_vals)
-        if min_len == 0:
-            print("Warning: No features to display")
-            return
+        feature_vals = feature_vals[:n_features]  # Ensure correct length
         
-        # Truncate to common length so SHAP waterfall does not index out of bounds
-        actual_feature_names = actual_feature_names[:min_len]
-        shap_vals = shap_vals[:min_len]
-        feature_vals = feature_vals[:min_len]
+        # Final check - arrays should match
+        assert len(shap_vals) == len(feature_vals) == len(actual_feature_names), \
+            f"Length mismatch: SHAP={len(shap_vals)}, features={len(feature_vals)}, names={len(actual_feature_names)}"
         
         # Create waterfall plot
         if model_type == 'random_forest':
