@@ -57,12 +57,12 @@ def compute_profitability_factors(df):
         elif 'pickup_time' in df.columns:
             df['pickup_hour'] = pd.to_datetime(df['pickup_time'], format='%H:%M:%S', errors='coerce').dt.hour
     
-    hour_bonus = df_factors['pickup_hour'].apply(lambda h: 
-        0.3 if h in [7, 8, 9] else  # Morning rush
-        0.3 if h in [17, 18, 19] else  # Evening rush
-        0.15 if h in [20, 21, 22] else  # Late evening (surge pricing)
-        0.1 if h in [10, 11, 12, 13, 14, 15, 16] else  # Daytime
-        0.05  # Late night/early morning
+    hour_bonus = df['pickup_hour'].apply(lambda h: 
+        0.3 if h in [7, 8, 9] else
+        0.3 if h in [17, 18, 19] else
+        0.15 if h in [20, 21, 22] else
+        0.1 if h in [10, 11, 12, 13, 14, 15, 16] else
+        0.05
     )
     
     if 'is_weekend' not in df.columns:
@@ -1233,7 +1233,5 @@ def main():
     else:
         print("\n Ablation study failed. Check error messages above.")
 
-
 if __name__ == "__main__":
     main()
-
